@@ -1,0 +1,286 @@
+<html>
+<head>
+  <link rel = "stylesheet" href ="https://fonts.googleapis.com/css?family=Didact+Gothic">
+  <link rel = "stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata">
+<style>
+  @import url(https://fonts.googleapis.com/css?family=Roboto%20Mono);
+  * {
+   margin: 0;
+   padding: 0;
+}
+  #container {
+    max-width: 100%;
+    height: 100%;
+    margin: 0px;
+    padding: 0;
+    overflow: hidden;
+    background:#F5F5F5;
+    background-size: 100% 100%;
+  }
+  .menu{
+  height: 100%; /* Full-height: remove this if you want "auto" height */
+  transition: .25s;
+  width: 0px; /* Set the width of the sidebar */
+  position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+  overflow: hidden; /* Disable horizontal scroll */
+  left: 0px;
+  top: 0px;
+  background:#212121;
+  font-family: Inconsolata;
+  }
+  .menu span a{
+    color: #999999;
+  }
+  .menu span:hover{
+    display:table-cell;
+    width:15%;
+    vertical-align:left;  
+    position:fixed;
+    background-color:#37474f;
+  }
+  .menu span{
+    position:absolute;
+    left: 0;
+  }
+  .menu h1{
+    text-align: center;
+    margin-top: .5em;
+    margin-bottom: .5em;
+    color: #999999;
+  }
+  .menu h2{
+    text-align: center;
+    margin-bottom: 1em;
+    color: #999999;
+  }
+  .menu center{
+margin-top: .5em;
+  }
+
+</style>
+<title>Welcome</title>
+</head>
+<body>
+
+<!-- div for the actual graph -->
+<div id="container"></div>
+<!-- div for menu bar -->
+<div class="menu", id="menu">
+  <center><a href = "./index.html"><img src="./thrm.png" width="120px" height="85px"></a></center>
+  <h1>Welcome!</h1>
+  <h2>Click a Node To Get Started</h2>
+  <ul>
+    <!--<li><span><a class="icon icon-data" href="./pages/About Me.html">About Me & Website</a></span></li> -->
+    <li><span><a class="icon icon-data" href="https://github.com/Dakoteus">Github</a></span></li>
+    <li><span><a class="icon icon-data" href="https://www.linkedin.com/in/dakota-wicker-06658013b/">LinkedIn</a></span></li>
+    <!-- <li><span><a class="icon icon-data" href="./pages/Contact Me.html">Contact Me</a></span></li> -->
+  </ul>
+</div>
+<!--These are the scripts from sigma.js that are used to control the graph. -->
+<script src="./sigma.js/build/sigma.min.js"></script>
+<script src="./sigma.js/build/plugins/sigma.parsers.json.min.js"></script>
+<script src="./sigma.js/build/plugins/sigma.plugins.animate.min.js"></script>
+<script src="./sigma.js/plugins/sigma.renderers.customEdgeShapes/sigma.canvas.edges.dashed.js"></script>
+<script src="./sigma.js/plugins/sigma.renderers.customEdgeShapes/sigma.canvas.edges.parallel.js"></script>
+<script src="./sigma.js/src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script>
+ ////////////////////////////////////////////////////
+//Create new sigma object, with appropriate fields./
+////////////////////////////////////////////////////
+var s = new sigma({
+  container: 'container',
+  graph: g,
+  settings: {
+    animationsTime: 1500,
+    labelThreshold: 0,
+    autoRescale: true,
+  },
+  renderer: {
+    container: document.getElementById('container'),
+    type: sigma.renderers.canvas
+  }
+});
+
+//Makes nodes clickable
+s.bind('clickNode', function(e) {
+    var course = e.data.node.label
+    //hardcoded to the template for now,
+    //but will replace with variable pages.
+    location.href = "./pages/"+ course +".html";
+
+});
+
+/////////////////////////////////////////////////////
+//Function to get a random color.                   /
+//Picks a random integer between 0 and hex max.     /
+//Then converts to str(base 16) and str concatenates/
+/////////////////////////////////////////////////////
+function GetColor(){return '#' + (Math.floor(Math.random()* 16777215).toString(16) + '000000').substr(0,6);}
+
+////////////////////////////////////////////////////////////
+//Gets a random location for the points to go on the grid.//
+////////////////////////////////////////////////////////////
+function GetLocation(max){ return Math.random()*max;}
+
+const colors = [];
+//set an initial color
+var c1 = GetColor();
+
+//This is setting an initial color. But, I want a 'light' theme, so if the initial color is too dark,
+//rather than searching for a new one, I will increase it's brightness RGB component wise.           
+var rgb = [];
+//grabbing rgb values into array
+rgb[0] = c1.substring(1,3);
+rgb[1] = c1.substring(3,5);
+rgb[2] = c1.substring(5,7);
+var brightbooster = parseInt('000079',16);
+//if either R,G,or B channel is below brightbooster, add that amount too it.
+if (parseInt(rgb[0],16) < brightbooster){
+rgb[0] = parseInt(rgb[0],16) + brightbooster;
+}
+if(parseInt(rgb[1],16) < brightbooster){
+rgb[1] = parseInt(rgb[1],16) + brightbooster;
+}
+if(parseInt(rgb[2],16) < brightbooster){
+rgb[2] = parseInt(rgb[2],16) + brightbooster;
+}
+//Now, just concatenate the RGB channels back together
+c1 = '#' + rgb[0].toString(16) + rgb[1].toString(16) + rgb[2].toString(16);
+colors[0] = c1;
+var N = 12; //How many colors you want?
+///////////////////////////////////////////////////////////////////
+//Changing upper and lower values can lead to performance issues.//
+//the smaller the interval, the less likely a color is a 'good'  //
+//also noticed that not all intervals 'act' the same.            //
+///////////////////////////////////////////////////////////////////
+//upper & lower bound on how 'different' colors can be
+var upper = 150; 
+var lower = 50; 
+
+// I have an initial color as above, then, I have a 'difference' measure which tells
+// me how 'different' two colors are. If the initial color and the current random
+// color are too 'different' or 'similar', then I discard and search for a new color and repeat.
+// I do this for all elements in the color list.
+// This means that any new random color that I pull in, it must be not too
+// different AND not too similar than every element in the color list.
+for(i = 1; i < N; i++)
+{
+  var color = '';
+  var satisfy = false;
+  var diff;
+  //While we don't have a good color, search for one.
+  while(!satisfy){
+      color = GetColor();
+      var currhex = [];
+      var randhex = [];
+
+      //store RGB values for difference equation
+      randhex[0] = color.substring(1,3);
+      randhex[1] = color.substring(3,5);
+      randhex[2] = color.substring(5,7);
+      //better complexity to calculate here rather than doing it in diff.
+      parserand1 = parseInt(randhex[0],16);
+      parserand2 = parseInt(randhex[1],16);
+      parserand3 = parseInt(randhex[2],16);
+      var goodcolor = true;
+      
+      for(var j = 1; j <= colors.length; j++){
+        currhex[0] = colors[j-1].substring(1,3);
+        currhex[1] = colors[j-1].substring(3,5);
+        currhex[2] = colors[j-1].substring(5,7);
+
+        //Instead of piecewise subtracting RGB values, I wanted it more 'directional' so I chose the 
+        //sum of differences of each channel which seems to be a better definition for color 'distance'.
+        diff = Math.abs(parseInt(currhex[0],16) - parserand1) 
+                +Math.abs(parseInt(currhex[1],16) - parserand2) 
+                +Math.abs(parseInt(currhex[2],16) - parserand3);
+
+        //if I'm not satisfied, get it outta here and restart.
+        if(diff >= upper || diff <= lower)
+          {
+          goodcolor = false;
+          break;
+          }
+      }
+      if(goodcolor)
+        {
+        satisfy = true;
+        }
+  }
+    if(satisfy){colors[i] = color;}
+}
+
+/////////////////////////////////////////////
+//Creating the main graph seen on the page.//
+/////////////////////////////////////////////
+var max = 15;
+var size = 500;
+//The x and y locations describe initial conditions while
+//transformx, transformy, describe the state after the initial animation
+var g = {
+  nodes: [
+    { id: "calc1", label: "Calculus I", x:GetLocation(max), y:GetLocation(max)-(max/3), size: 1, color: colors[0],transformx:2, transformy:-1/2 },
+    { id: "calc2", label: "Calculus II", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[1], transformx:2, transformy:-1 },
+    { id: "calc3", label: "Calculus III", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[2], transformx:1, transformy:-2 },
+    { id: "lin", label: "Linear Algebra", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[5], transformx:1+(3*2/6), transformy:-1.625 },
+    { id: "proof", label: "Structures and Proofs", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[8], transformx:3, transformy:-2 },
+    { id: "real", label: "Real Analysis", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[7], transformx:1+(5*2/6), transformy:-1.875 },
+    { id: "diffeq", label: "Differential Equations", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[3], transformx:1+(2/6), transformy:-1.875 },
+    { id: "stats", label: "Statistics", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[4], transformx:1+(2*2/6), transformy:-1.75 },
+    { id: "elec", label: "Electives", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[6], transformx:1+(4*2/6), transformy:-1.75 },
+    { id: "abstract", label: "Abstract Algebra", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[9], transformx:3, transformy:-2.5 },
+    { id: "adcalc", label: "Advanced Calculus", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[10], transformx:1, transformy:-2.5 },
+    { id: "sem", label: "Senior Seminar", x: GetLocation(max), y: GetLocation(max), size: 1, color: colors[11], transformx:2, transformy:-3 },
+    
+  ],
+  edges: [
+    { id: "e0", source: "calc1", target: "calc2", color: colors[0] , type:'arrow', size:size},
+    { id: "e1", source: "calc2", target: "calc3", color: colors[1], type:'arrow', size:size},
+    { id: "e2", source: "calc2", target: "lin", color: colors[1], type:'arrow', size:size},
+    { id: "e3", source: "calc2", target: "proof", color: colors[1], type:'arrow', size:size},
+    { id: "e4", source: "calc2", target: "real", color: colors[1], type:'arrow', size:size},
+    { id: "e5", source: "calc2", target: "diffeq", color: colors[1], type:'arrow', size:size},
+    { id: "e6", source: "calc2", target: "stats", color: colors[1], type:'arrow', size:size},
+    { id: "e7", source: "real", target: "proof", color: colors[7], type:'curvedArrow', size:size},
+    { id: "e8", source: "lin", target: "abstract", color: colors[5], type:'arrow', size:size},
+    { id: "e9", source: "lin", target: "adcalc", color: colors[5], type:'arrow', size:size},
+    { id: "e10", source: "proof", target: "abstract", color: colors[8], type:'arrow', size:size},
+    { id: "e11", source: "calc3", target: "adcalc", color: colors[2], type:'arrow', size:size},
+    { id: "e12", source: "calc3", target: "sem", color: colors[2], type:'arrow', size:size},
+    { id: "e13", source: "diffeq", target: "sem", color: colors[3], type:'arrow', size:size},
+    { id: "e14", source: "stats", target: "sem", color: colors[4], type:'arrow', size:size},
+    { id: "e15", source: "lin", target: "sem", color: colors[5], type:'arrow', size:size},
+    { id: "e16", source: "elec", target: "sem", color: colors[6], type:'arrow', size:size},
+    { id: "e17", source: "real", target: "sem", color: colors[7], type:'arrow', size:size},
+    { id: "e18", source: "proof", target: "sem", color: colors[8], type:'arrow', size:size},
+    { id: "e19", source: "adcalc", target: "sem", color: colors[10], type:'arrow', size:size},
+    { id: "e20", source: "abstract", target: "sem", color: colors[9], type:'arrow', size:size},
+    { id: "e21", source: "calc2", target: "elec", color: colors[1], type:'dashed', size:size},
+    { id: "e22", source: "proof", target: "elec", color: colors[8], type:'dashed', size:size},
+    { id: "e23", source: "stats", target: "elec", color: colors[4], type:'dashed', size:size},
+    { id: "e24", source: "lin", target: "elec", color: colors[5], type:'dashed', size:size}
+  ]
+}
+/////////////////////////////////////////
+//Load the graph into the sigma object.//
+/////////////////////////////////////////
+s.graph.read(g);
+s.refresh();
+//////////////////////
+//run cool animation//
+//////////////////////
+sigma.plugins.animate(
+    s,
+    {
+      x: 'transformx',
+      y:  'transformy',
+    }
+  );
+
+  setTimeout(function openNav() {
+  document.getElementById("menu").style.width = "15%";
+  //document.getElementById("container").style.width = "85%";
+  },1500);
+</script>
+</body>
+</html>
